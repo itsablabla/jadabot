@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jadabot"
+version = "0.1.0"
+description = "jadabot core - LangBot-based bot platform with per-bot Pipali runtimes, a central LLM manager, and Mem0 long-term memory"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "httpx>=0.28,<1",
+    "pydantic>=2.7,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.26",
+    "uvicorn>=0.34",
+]
+
+[tool.setuptools.packages.find]
+include = ["jadabot*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

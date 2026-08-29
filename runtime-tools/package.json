@@ -1,0 +1,16 @@
+{
+  "name": "@jadabot/runtime-memory-tools",
+  "version": "0.1.0",
+  "description": "Mem0-backed memory_search / memory_add actors for per-bot Pipali runtimes",
+  "type": "module",
+  "main": "dist/memoryActors.js",
+  "types": "dist/memoryActors.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  }
+}

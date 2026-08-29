@@ -1,0 +1,55 @@
+# jadabot memory stack: self-hosted Mem0 server + pgvector.
+#
+# Mem0's own LLM/embedding calls are routed through jadabot's central LLM
+# gateway (OPENAI_BASE_URL) so memory-extraction usage is centrally routed,
+# rate-limited and cost-attributed. No provider API keys live in this stack;
+# the gateway key is an internal jadabot credential.
+#
+# Copy .env.example to .env and fill in values before `docker compose up`.
+
+name: jadabot-memory
+
+services:
+  mem0:
+    image: mem0ai/mem0-server:latest # pin to a tested tag before production (v3 algorithm)
+    restart: unless-stopped
+    ports:
+      - "8888:8000"
+    environment:
+      # Route Mem0's fact-extraction LLM + embedder through the central LLM manager
+      - OPENAI_BASE_URL=${JADABOT_LLM_GATEWAY_URL:-http://jadabot-core:5300/v1}
+      - OPENAI_API_KEY=${JADABOT_LLM_GATEWAY_MEM0_KEY:?set in .env}
+      - POSTGRES_HOST=mem0-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set in .env}
+      - MEM0_TELEMETRY=false
+    depends_on:
+      mem0-postgres:
+        condition: service_healthy
+    networks:
+      - jadabot_memory
+
+  mem0-postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    shm_size: "128mb"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set in .env}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -q -d postgres -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mem0_postgres_db:/var/lib/postgresql/data
+    networks:
+      - jadabot_memory
+
+volumes:
+  mem0_postgres_db:
+
+networks:
+  jadabot_memory:
+    driver: bridge
