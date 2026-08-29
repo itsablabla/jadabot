@@ -62,9 +62,11 @@ export function createRuntimeHandler(
               if (event.type === "done") break;
             }
           } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
+            console.error(`task failed for bot ${config.botId}:`, error);
             controller.enqueue(
-              encoder.encode(sseLine({ type: "text", data: { text: `runtime error: ${message}` } })),
+              encoder.encode(
+                sseLine({ type: "text", data: { text: "The agent hit an internal error. Please try again." } }),
+              ),
             );
             controller.enqueue(encoder.encode(sseLine({ type: "done" })));
           } finally {
