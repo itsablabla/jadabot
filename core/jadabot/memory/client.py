@@ -102,6 +102,17 @@ class Mem0Client:
         self._raise_for_status(resp)
         return self._parse_results(resp.json())
 
+    async def get(self, memory_id: str) -> MemoryRecord | None:
+        """Fetch one memory by ID, or ``None`` if it does not exist."""
+        resp = await self._http.get(f"/memories/{memory_id}")
+        if resp.status_code == 404:
+            return None
+        self._raise_for_status(resp)
+        body = resp.json()
+        if not isinstance(body, dict) or body.get("id") is None:
+            return None
+        return MemoryRecord.model_validate(body)
+
     async def delete(self, memory_id: str) -> None:
         """Delete one memory by ID."""
         resp = await self._http.delete(f"/memories/{memory_id}")

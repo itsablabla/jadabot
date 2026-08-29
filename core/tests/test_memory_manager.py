@@ -90,6 +90,8 @@ async def test_delete_memory_enforces_bot_ownership(manager: MemoryManager, fake
 
     with pytest.raises(PermissionError):
         await manager.delete_memory("bot-b", memory_id)
+    with pytest.raises(PermissionError):
+        await manager.delete_memory("bot-a", "no-such-memory")
     await manager.delete_memory("bot-a", memory_id)
     assert fake_mem0.memories == []
 

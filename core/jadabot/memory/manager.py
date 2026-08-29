@@ -106,8 +106,8 @@ class MemoryManager:
 
     async def delete_memory(self, bot_id: str, memory_id: str) -> None:
         """Delete a single memory after confirming it belongs to ``bot_id``."""
-        records = await self._client.get_all({"agent_id": bot_id})
-        if not any(record.id == memory_id for record in records):
+        record = await self._client.get(memory_id)
+        if record is None or record.agent_id != bot_id:
             raise PermissionError(f"memory {memory_id!r} does not belong to bot {bot_id!r}")
         await self._client.delete(memory_id)
 

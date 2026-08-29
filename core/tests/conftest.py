@@ -74,6 +74,12 @@ class FakeMem0:
             memory_id = path.removeprefix("/memories/")
             self.memories = [m for m in self.memories if m["id"] != memory_id]
             return httpx.Response(200, json={"message": "deleted"})
+        if method == "GET" and path.startswith("/memories/"):
+            memory_id = path.removeprefix("/memories/")
+            for memory in self.memories:
+                if memory["id"] == memory_id:
+                    return httpx.Response(200, json=memory)
+            return httpx.Response(404, json={"detail": "not found"})
         if method == "DELETE" and path == "/memories":
             filters = {
                 k: v for k, v in request.url.params.items()

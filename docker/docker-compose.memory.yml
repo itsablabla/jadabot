@@ -11,7 +11,10 @@ name: jadabot-memory
 
 services:
   mem0:
-    image: mem0ai/mem0-server:latest # pin to a tested tag before production (v3 algorithm)
+    # Only `latest` is published upstream, so pin by manifest digest to avoid
+    # silently pulling a breaking version (Mem0 v2→v3 changed the algorithm).
+    # Override MEM0_IMAGE after validating a newer digest.
+    image: ${MEM0_IMAGE:-mem0/mem0-api-server@sha256:2fcf4bb713cfc584d454bf06993cc7e2fe51540695995bd3aa9c7008b7065c75}
     restart: unless-stopped
     ports:
       - "8888:8000"
