@@ -25,7 +25,11 @@ export class GatewayLLMClient {
   private readonly token: string;
 
   constructor(config: RuntimeConfig) {
-    this.baseUrl = config.llmGatewayUrl.replace(/\/+$/, "");
+    let baseUrl = config.llmGatewayUrl;
+    while (baseUrl.endsWith("/")) {
+      baseUrl = baseUrl.slice(0, -1);
+    }
+    this.baseUrl = baseUrl;
     this.token = config.botToken;
   }
 
