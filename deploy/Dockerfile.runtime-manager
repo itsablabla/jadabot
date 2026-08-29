@@ -1,0 +1,19 @@
+# jadabot Runtime Manager image
+#
+# Includes the Python core (RuntimeManager) plus Bun and the runtime-tools
+# harness so per-bot runtimes can be spawned as local Bun processes with
+# isolated working directories. For container-per-runtime isolation, replace
+# SubprocessSpawner with a container-backed RuntimeSpawner implementation.
+FROM oven/bun:1.2-slim AS bun
+
+FROM python:3.12-slim
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+
+WORKDIR /app
+COPY core/pyproject.toml core/README.md ./core/
+COPY core/jadabot ./core/jadabot
+RUN pip install --no-cache-dir ./core
+COPY runtime-tools ./runtime-tools
+
+ENV JADABOT_RUNTIMES_ROOT=/var/lib/jadabot/runtimes
+CMD ["python", "-m", "jadabot.runtimes"]
