@@ -1,0 +1,13 @@
+{
+  "name": "@jadabot/runtime-tools",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Headless per-bot runtime harness implementing the jadabot runtime contract (Pipali adapter)",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

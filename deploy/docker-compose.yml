@@ -1,0 +1,82 @@
+# jadabot unified deployment
+#
+# Brings up the full platform:
+#   - LangBot (base platform: IM connectors, pipelines, web panel)
+#   - LLM Manager gateway (the ONLY component holding provider API keys)
+#   - Runtime Manager (spawns one Pipali runtime per bot)
+#   - Mem0 memory service backed by Qdrant
+#
+# Copy .env.example to .env and fill in secrets before running:
+#   docker compose up -d
+
+services:
+  langbot:
+    image: langbot/langbot:latest
+    container_name: jadabot-langbot
+    ports:
+      - "5300:5300"
+    volumes:
+      - langbot-data:/app/data
+      - ./langbot-plugin:/app/plugins/jadabot-bridge:ro
+    environment:
+      TZ: ${TZ:-UTC}
+    depends_on:
+      - llm-manager
+      - runtime-manager
+    restart: unless-stopped
+
+  llm-manager:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.core
+    container_name: jadabot-llm-manager
+    command: uvicorn jadabot.llm.app:create_app --factory --host 0.0.0.0 --port 8100
+    ports:
+      - "8100:8100"
+    environment:
+      JADABOT_DEFAULT_MODEL: ${JADABOT_DEFAULT_MODEL:-gpt-4o-mini}
+      JADABOT_PROVIDER_OPENAI_BASE_URL: ${JADABOT_PROVIDER_OPENAI_BASE_URL:-https://api.openai.com/v1}
+      JADABOT_PROVIDER_OPENAI_API_KEY: ${JADABOT_PROVIDER_OPENAI_API_KEY:-}
+      JADABOT_PROVIDER_OPENAI_MODELS: ${JADABOT_PROVIDER_OPENAI_MODELS:-}
+    restart: unless-stopped
+
+  runtime-manager:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.runtime-manager
+    container_name: jadabot-runtime-manager
+    environment:
+      JADABOT_LLM_GATEWAY_URL: http://llm-manager:8100
+      JADABOT_RUNTIMES_ROOT: /var/lib/jadabot/runtimes
+    volumes:
+      - runtimes-data:/var/lib/jadabot/runtimes
+    depends_on:
+      - llm-manager
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: jadabot-qdrant
+    volumes:
+      - qdrant-data:/qdrant/storage
+    restart: unless-stopped
+
+  mem0:
+    image: mem0/openmemory-mcp:latest
+    container_name: jadabot-mem0
+    environment:
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      # Route Mem0's LLM + embedding calls through the central gateway so all
+      # model traffic stays managed and billable per bot.
+      OPENAI_BASE_URL: http://llm-manager:8100/v1
+      OPENAI_API_KEY: ${JADABOT_MEM0_GATEWAY_TOKEN:-}
+    depends_on:
+      - qdrant
+      - llm-manager
+    restart: unless-stopped
+
+volumes:
+  langbot-data:
+  runtimes-data:
+  qdrant-data:
